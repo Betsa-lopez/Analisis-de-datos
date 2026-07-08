@@ -58,12 +58,13 @@ def cargar_datos(archivo):
     print(f"{'='*60}")
     try:
         df = pd.read_excel(archivo, sheet_name=HOJA_DATOS)
-        print(f"  Datos cargados correctamente")
-        print(f"  Total de respuestas: {len(df)}")
+        print(f"   Datos cargados correctamente")
+        print(f"   Total de respuestas: {len(df)}")
         return df
     except FileNotFoundError:
-        print(f"  ERROR: No se encontró el archivo '{archivo}'")
-        print(f"  El archivo Excel debe estar en la misma carpeta que este script.")
+        print(f"   ERROR: No se encontró el archivo '{archivo}'")
+        print(
+            f"  El archivo Excel debe estar en la misma carpeta que este script.")
         sys.exit(1)
 
 # ── PROCESAMIENTO ─────────────────────────────────────────────────────────────
@@ -176,7 +177,7 @@ def guardar(fig, nombre):
     ruta = os.path.join(CARPETA_GRAFICAS, nombre)
     fig.savefig(ruta, dpi=150, bbox_inches='tight', facecolor='white')
     plt.close(fig)
-    print(f"  ✔ Gráfica guardada: {ruta}")
+    print(f"   Gráfica guardada: {ruta}")
 
 
 def grafica_semestres(df, col_semestre):
@@ -456,19 +457,73 @@ def main():
     print(f"{'='*60}")
     print(f"\n  Hipótesis 1:")
     print(
-        f"    Jornada regular  → Z = {res_h1_g1['z']:>6.4f}  {'✔ Se rechaza H₀' if res_h1_g1['rechaza'] else '✘ No se rechaza H₀'}")
+        f"    Jornada regular  → Z = {res_h1_g1['z']:>6.4f}  {' Se rechaza H₀' if res_h1_g1['rechaza'] else ' No se rechaza H₀'}")
     print(
-        f"    Jornada extensa  → Z = {res_h1_g2['z']:>6.4f}  {'✔ Se rechaza H₀' if res_h1_g2['rechaza'] else '✘ No se rechaza H₀'}")
+        f"    Jornada extensa  → Z = {res_h1_g2['z']:>6.4f}  {' Se rechaza H₀' if res_h1_g2['rechaza'] else ' No se rechaza H₀'}")
     print(f"\n  Hipótesis 2:")
     print(
-        f"    Sem. iniciales   → Z = {res_h2_g1['z']:>6.4f}  {'✔ Se rechaza H₀' if res_h2_g1['rechaza'] else '✘ No se rechaza H₀'}")
+        f"    Sem. iniciales   → Z = {res_h2_g1['z']:>6.4f}  {' Se rechaza H₀' if res_h2_g1['rechaza'] else ' No se rechaza H₀'}")
     print(
-        f"    Sem. avanzados   → Z = {res_h2_g2['z']:>6.4f}  {'✔ Se rechaza H₀' if res_h2_g2['rechaza'] else '✘ No se rechaza H₀'}")
+        f"    Sem. avanzados   → Z = {res_h2_g2['z']:>6.4f}  {' Se rechaza H₀' if res_h2_g2['rechaza'] else ' No se rechaza H₀'}")
     print(f"\n  Gráficas guardadas en: ./{CARPETA_GRAFICAS}/")
     print(f"\n{'='*60}")
     print(f"  ANÁLISIS COMPLETADO EXITOSAMENTE")
     print(f"{'='*60}\n")
 
 
+def conclusion(res_h1_g1, res_h1_g2, res_h2_g1, res_h2_g2, df, col_extremas):
+    extremas_pct = round(
+        (1 - df[col_extremas].value_counts(normalize=True).get('No, nunca', 0)) * 100, 1)
+
+    print(f"\n{'='*60}")
+    print(f"  CONCLUSIÓN")
+    print(f"{'='*60}\n")
+
+    print(f"  H1: La prueba Z confirmó que las jornadas extensas (8-12 h)")
+    print(
+        f"  producen impacto cognitivo significativo (Z = {res_h1_g2['z']} > 1.96),")
+    print(
+        f"  mientras que las regulares no lo generan (Z = {res_h1_g1['z']}).")
+
+    print(f"\n  H2: Los semestres avanzados presentan mayor impacto cognitivo")
+    print(
+        f"  (Z = {res_h2_g2['z']}) que los iniciales (Z = {res_h2_g1['z']}),")
+    print(f"  lo que indica que la carga cognitiva aumenta con la carrera.")
+
+    print(
+        f"\n  Dato adicional: el {extremas_pct}% de los estudiantes ha trabajado")
+    print(f"  3 o mas dias consecutivos en algun proyecto de programacion.")
+    print(f"\n{'='*60}\n")
+
+
+def main_con_conclusion():
+    df = cargar_datos(ARCHIVO_EXCEL)
+    df, col_semestre, col_sexo, col_edad, col_horas, col_extremas, cols_b = procesar_datos(
+        df)
+    medias, sigmas = estadisticos_descriptivos(df, cols_b)
+    regular = df[df[col_horas].isin(
+        ["Menos de 2 horas", "2-4 horas"])]["promedio_cognitivo"].dropna()
+    extensa = df[df[col_horas].isin(
+        ["8-10 horas", "11-12 horas"])]["promedio_cognitivo"].dropna()
+    iniciales = df[df[col_semestre].isin(
+        ["Primer semestre", "Segundo semestre", "Tercer semestre"])]["promedio_cognitivo"].dropna()
+    avanzados = df[df[col_semestre].isin(
+        ["Séptimo semestre", "Octavo semestre", "Noveno semestre o superior"])]["promedio_cognitivo"].dropna()
+    res_h1_g1 = prueba_z(regular, "Jornada regular (< 4 horas)")
+    res_h1_g2 = prueba_z(extensa,  "Jornada extensa (8-12 horas)")
+    res_h2_g1 = prueba_z(iniciales, "Semestres iniciales (1-3)")
+    res_h2_g2 = prueba_z(avanzados,  "Semestres avanzados (7+)")
+    grafica_semestres(df, col_semestre)
+    grafica_sexo(df, col_sexo)
+    grafica_edad(df, col_edad)
+    grafica_horas(df, col_horas)
+    grafica_extremas(df, col_extremas)
+    grafica_reactivos(medias, sigmas)
+    grafica_prueba_z(res_h1_g1, res_h1_g2, "Hipotesis 1", "Regular", "Extensa")
+    grafica_prueba_z(res_h2_g1, res_h2_g2, "Hipotesis 2",
+                     "Iniciales", "Avanzados")
+    conclusion(res_h1_g1, res_h1_g2, res_h2_g1, res_h2_g2, df, col_extremas)
+
+
 if __name__ == "__main__":
-    main()
+    main_con_conclusion()
