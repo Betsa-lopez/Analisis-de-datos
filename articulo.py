@@ -31,7 +31,7 @@ GRIS = "#E8E8E8"
 
 os.makedirs(CARPETA_GRAFICAS, exist_ok=True)
 
-# ── MAPEO LIKERT ──────────────────────────────────────────────────────────────
+# ── MAPEO DE LIKERT ──────────────────────────────────────────────────────────────
 LIKERT_MAP = {}
 
 
@@ -49,7 +49,7 @@ def mapear_likert(valor):
         return 5
     return np.nan
 
-# ── CARGA DE DATOS ────────────────────────────────────────────────────────────
+# ── CARGA DEL ARCHIVO EXCEL ────────────────────────────────────────────────────────────
 
 
 def cargar_datos(archivo):
@@ -67,7 +67,7 @@ def cargar_datos(archivo):
             f"  El archivo Excel debe estar en la misma carpeta que este script.")
         sys.exit(1)
 
-# ── PROCESAMIENTO ─────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────
 
 
 def procesar_datos(df):
@@ -87,7 +87,7 @@ def procesar_datos(df):
 
     return df, col_semestre, col_sexo, col_edad, col_horas, col_extremas, cols_b
 
-# ── ESTADÍSTICOS DESCRIPTIVOS ─────────────────────────────────────────────────
+# ── ESTADÍSTICAS ─────────────────────────────────────────────────
 
 
 def estadisticos_descriptivos(df, cols_b):
@@ -132,7 +132,7 @@ def estadisticos_descriptivos(df, cols_b):
 
     return medias, sigmas
 
-# ── PRUEBA Z ──────────────────────────────────────────────────────────────────
+# ── COMPROBACION MEDIANTE LA PRUEBA Z ──────────────────────────────────────────────────────────────────
 
 
 def prueba_z(datos, nombre_grupo, mu=MU):
@@ -170,7 +170,7 @@ def prueba_z(datos, nombre_grupo, mu=MU):
             'denominador': round(denominador, 4), 'numerador': round(numerador, 4),
             'z': round(z, 4), 'rechaza': rechaza}
 
-# ── GRÁFICAS ──────────────────────────────────────────────────────────────────
+# ── GENERACION DE LAS GRÁFICAS ──────────────────────────────────────────────────────────────────
 
 
 def guardar(fig, nombre):
@@ -370,28 +370,22 @@ def grafica_prueba_z(res1, res2, titulo_h, etiq1, etiq2):
     nombre = titulo_h.replace(' ', '_').replace(
         '—', '').replace('/', 'vs')[:30] + '.png'
     guardar(fig, nombre)
-
-# ── PROGRAMA PRINCIPAL ────────────────────────────────────────────────────────
+# ----------------------------------------------------------------
 
 
 def main():
     print("\n" + "="*60)
     print("  ANÁLISIS DE IMPACTO COGNITIVO EN ESTUDIANTES DE ISC")
-    print("  Universidad Juárez Autónoma de Tabasco — DACI")
-    print("  Autora: Betsabe Guadalupe López Gómez")
+    print("  Universidad Juárez Autónoma de Tabasco — DACYTI")
     print("="*60)
 
-    # 1. Cargar datos
     df = cargar_datos(ARCHIVO_EXCEL)
 
-    # 2. Procesar
     df, col_semestre, col_sexo, col_edad, col_horas, col_extremas, cols_b = procesar_datos(
         df)
 
-    # 3. Estadísticos descriptivos
     medias, sigmas = estadisticos_descriptivos(df, cols_b)
 
-    # 4. Distribuciones sociodemográficas
     print(f"\n{'='*60}")
     print(f"  DISTRIBUCIONES SOCIODEMOGRÁFICAS")
     print(f"{'='*60}")
@@ -406,7 +400,7 @@ def main():
     print(f"\n  Jornadas extremas:")
     print(df[col_extremas].value_counts().to_string())
 
-    # 5. Prueba Z — Hipótesis 1
+    # Prueba Z — Hipótesis 1
     print(f"\n{'='*60}")
     print(f"  HIPÓTESIS 1 — Jornadas regulares vs. jornadas extensas")
     print(
@@ -421,7 +415,7 @@ def main():
     res_h1_g1 = prueba_z(regular, "Jornada regular (< 4 horas)")
     res_h1_g2 = prueba_z(extensa,  "Jornada extensa (8–12 horas)")
 
-    # 6. Prueba Z — Hipótesis 2
+    # Prueba Z — Hipótesis 2
     print(f"\n{'='*60}")
     print(f"  HIPÓTESIS 2 — Semestres iniciales vs. semestres avanzados")
     print(
@@ -436,7 +430,7 @@ def main():
     res_h2_g1 = prueba_z(iniciales, "Semestres iniciales (1°–3°)")
     res_h2_g2 = prueba_z(avanzados,  "Semestres avanzados (7°+)")
 
-    # 7. Generar gráficas
+    # Generar gráficas
     print(f"\n{'='*60}")
     print(f"  GENERANDO GRÁFICAS")
     print(f"{'='*60}")
@@ -451,7 +445,6 @@ def main():
     grafica_prueba_z(res_h2_g1, res_h2_g2, "Hipótesis 2 — Semestres iniciales vs avanzados",
                      "Semestres iniciales (1°–3°)", "Semestres avanzados (7°+)")
 
-    # 8. Resumen final
     print(f"\n{'='*60}")
     print(f"  RESUMEN DE RESULTADOS")
     print(f"{'='*60}")
@@ -469,61 +462,3 @@ def main():
     print(f"\n{'='*60}")
     print(f"  ANÁLISIS COMPLETADO EXITOSAMENTE")
     print(f"{'='*60}\n")
-
-
-def conclusion(res_h1_g1, res_h1_g2, res_h2_g1, res_h2_g2, df, col_extremas):
-    extremas_pct = round(
-        (1 - df[col_extremas].value_counts(normalize=True).get('No, nunca', 0)) * 100, 1)
-
-    print(f"\n{'='*60}")
-    print(f"  CONCLUSIÓN")
-    print(f"{'='*60}\n")
-
-    print(f"  H1: La prueba Z confirmó que las jornadas extensas (8-12 h)")
-    print(
-        f"  producen impacto cognitivo significativo (Z = {res_h1_g2['z']} > 1.96),")
-    print(
-        f"  mientras que las regulares no lo generan (Z = {res_h1_g1['z']}).")
-
-    print(f"\n  H2: Los semestres avanzados presentan mayor impacto cognitivo")
-    print(
-        f"  (Z = {res_h2_g2['z']}) que los iniciales (Z = {res_h2_g1['z']}),")
-    print(f"  lo que indica que la carga cognitiva aumenta con la carrera.")
-
-    print(
-        f"\n  Dato adicional: el {extremas_pct}% de los estudiantes ha trabajado")
-    print(f"  3 o mas dias consecutivos en algun proyecto de programacion.")
-    print(f"\n{'='*60}\n")
-
-
-def main_con_conclusion():
-    df = cargar_datos(ARCHIVO_EXCEL)
-    df, col_semestre, col_sexo, col_edad, col_horas, col_extremas, cols_b = procesar_datos(
-        df)
-    medias, sigmas = estadisticos_descriptivos(df, cols_b)
-    regular = df[df[col_horas].isin(
-        ["Menos de 2 horas", "2-4 horas"])]["promedio_cognitivo"].dropna()
-    extensa = df[df[col_horas].isin(
-        ["8-10 horas", "11-12 horas"])]["promedio_cognitivo"].dropna()
-    iniciales = df[df[col_semestre].isin(
-        ["Primer semestre", "Segundo semestre", "Tercer semestre"])]["promedio_cognitivo"].dropna()
-    avanzados = df[df[col_semestre].isin(
-        ["Séptimo semestre", "Octavo semestre", "Noveno semestre o superior"])]["promedio_cognitivo"].dropna()
-    res_h1_g1 = prueba_z(regular, "Jornada regular (< 4 horas)")
-    res_h1_g2 = prueba_z(extensa,  "Jornada extensa (8-12 horas)")
-    res_h2_g1 = prueba_z(iniciales, "Semestres iniciales (1-3)")
-    res_h2_g2 = prueba_z(avanzados,  "Semestres avanzados (7+)")
-    grafica_semestres(df, col_semestre)
-    grafica_sexo(df, col_sexo)
-    grafica_edad(df, col_edad)
-    grafica_horas(df, col_horas)
-    grafica_extremas(df, col_extremas)
-    grafica_reactivos(medias, sigmas)
-    grafica_prueba_z(res_h1_g1, res_h1_g2, "Hipotesis 1", "Regular", "Extensa")
-    grafica_prueba_z(res_h2_g1, res_h2_g2, "Hipotesis 2",
-                     "Iniciales", "Avanzados")
-    conclusion(res_h1_g1, res_h1_g2, res_h2_g1, res_h2_g2, df, col_extremas)
-
-
-if __name__ == "__main__":
-    main_con_conclusion()
